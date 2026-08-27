@@ -1,0 +1,25 @@
+{
+  "name": "nodejs-monorepo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm run dev --workspace=@ecommerce/api",
+    "start": "npm run start --workspace=@ecommerce/api",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "workspaces": [
+    "apps/api",
+    "packages/contracts",
+    "packages/config",
+    "packages/shared"
+  ],
+  "engines": {
+    "node": ">=24"
+  }
+}
