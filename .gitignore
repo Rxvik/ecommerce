@@ -1,10 +1,12 @@
 node_modules/
-.env 
+.env
 
 *.log
 logs/
 
 coverage/
 
-dist/   
+dist/
 build/
+
+apps/api/secrets

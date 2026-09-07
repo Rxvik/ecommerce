@@ -1,16 +1,18 @@
-import {randomUUID} from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
-import  router  from './routes/index.js';
+import apiRouter from './routes/index.js';
 import { errorMiddleware } from './shared/middleware/error.middleware.js';
 import { notFoundMiddleware } from './shared/middleware/not-found.middleware.js';
 
 export const app = express();
+
 app.disable('x-powered-by');
+
 app.use(pinoHttp({
     logger,
     genReqId (req, res) {
@@ -32,6 +34,12 @@ app.use(express.urlencoded({
     extended: false,
     limit: '1mb'
 }));
-app.use(env.API_PREFIX, router);
+
+// 1. Rutas de la API (deben registrarse antes del 404)
+app.use(env.API_PREFIX, apiRouter);
+
+// 2. Middleware 404 (se ejecuta solo si la ruta no coincidió con ninguna anterior)
 app.use(notFoundMiddleware);
+
+// 3. Manejador global de errores (siempre al final)
 app.use(errorMiddleware);
