@@ -8,5 +8,3 @@ coverage/
 
 dist/
 build/
-
-apps/api/secrets
