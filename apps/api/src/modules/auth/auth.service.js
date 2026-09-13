@@ -1,7 +1,7 @@
-import { AppError } from '../shared/errors/app-error.js';
-import { hashPassword, verifyPassword } from '../shared/security/passwords.js';
-import { signAccessToken, signRefreshToken, hashToken, verifyRefreshToken } from '../shared/security/tokens.js';
-import * as uiserRepository from '../users/user.repository.js';
+import { AppError } from '../../shared/errors/app-error.js';
+import { hashPassword, verifyPassword } from '../../shared/security/password.js';
+import { signAccessToken, signRefreshToken, hashToken, verifyRefreshToken } from '../../shared/security/tokens.js';
+import * as userRepository from '../users/user.repository.js';
 import * as authRepository from './auth.repository.js';
 
 function issueTokens (user) {
@@ -16,7 +16,7 @@ function issueTokens (user) {
 }
 
 export async function register (data) {
-    const existingUser = await uiserRepository.findByEmail(data.email);
+    const existingUser = await userRepository.findByEmail(data.email);
     if (existingUser) {
         throw new AppError({
             statusCode: 409,
@@ -24,7 +24,7 @@ export async function register (data) {
             message: 'email already exists'
         })
     }
-    const user = userRepository.createUser({
+    const user = await userRepository.createUser({
         name: data.name,
         email: data.email,
         passwordHash: await hashPassword(data.password),
@@ -40,4 +40,78 @@ export async function register (data) {
         user,
         ...tokens
     }
+}
+
+export async function login (data) {
+    const user = await userRepository.findByEmail(data.email);
+
+    if (!user) {
+        throw new AppError({
+            statusCode: 401,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Credenciales inválidas'
+        })
+    }
+
+    const validPassword = await verifyPassword(data.password, user.passwordHash);
+
+    if (!validPassword || !user.active) {
+        throw new AppError({
+            statusCode: 401,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Credenciales inválidas'
+        })
+    }
+
+    const tokens = issueTokens(user);
+
+    await authRepository.saveRefreshToken({
+        userId: user.id,
+        tokenHash: hashToken(tokens.refreshToken)
+    })
+
+    return {
+        user,
+        ...tokens
+    }
+}
+
+export async function refresh (refreshToken) {
+    let payload;
+    try {
+        payload = verifyRefreshToken(refreshToken);
+    } catch {
+        throw new AppError({
+            statusCode: 401,
+            code: 'INVALID_REFRESH_TOKEN',
+            message: 'Refresh token inválido'
+        })
+    }
+    const tokenHash = hashToken(refreshToken);
+    const storedToken = await authRepository.findRefreshToken(tokenHash);
+    if (!storedToken || storedToken.revoked || storedToken.userId !== payload.sub) {
+        throw new AppError({
+            statusCode: 401,
+            code: 'INVALID_REFRESH_TOKEN',
+            message: 'Refresh token inválido'
+        })
+    }
+
+    await authRepository.revokeRefreshToken(tokenHash);
+    const user = await userRepository.findById(payload.sub);
+    if (!user || !user.active) {
+        throw new AppError({
+            statusCode: 401,
+            code: 'USER_DISABLED',
+            message: 'Usuario no disponible'
+        })
+    }
+
+    const tokens = issueTokens(user);
+    await authRepository.saveRefreshToken({
+        userId: user.id,
+        tokenHash: hashToken(tokens.refreshToken)
+    })
+
+    return tokens;
 }
