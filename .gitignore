@@ -8,3 +8,9 @@ coverage/
 
 dist/
 build/
+
+#.nuxt
+app/web/.nuxt
+app/web/dist
+app/web/.output
+app/web/node_modules
