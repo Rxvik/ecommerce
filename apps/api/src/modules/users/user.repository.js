@@ -42,13 +42,13 @@ export async function findById(id) {
 }
 
 export async function findByEmail(email) {
-    const user = await usersCollection.where('email', '==', email).limit(1).get();
+    const snapshot = await usersCollection.where('email', '==', email).limit(1).get();
 
-    if (user.empty) {
+    if (snapshot.empty) {
         return null;
     }
 
-    const foundUser = user[0];
+    const foundUser = snapshot.docs[0];
     return {
         ...mapUser(foundUser),
         passwordHash: foundUser.data().passwordHash

@@ -1,4 +1,4 @@
-import { permissionsByRole } from '../../config/permissions.util.js';
+import { permissionsByRole } from '../../config/permissions.js';
 import { AppError } from '../errors/app-error.js';
 
 export function authorize(permission) {

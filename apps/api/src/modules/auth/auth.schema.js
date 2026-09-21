@@ -23,10 +23,12 @@ export const loginSchema = z.object({
     query: empty
 });
 
-export const refreshTokenSchema = z.object({
+export const refreshSchema = z.object({
     body: z.object({
         refreshToken: z.string().min(1)
     }),
     params: empty,
     query: empty
 });
+
+
